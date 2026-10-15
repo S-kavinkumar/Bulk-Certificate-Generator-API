@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from sqlalchemy.orm import Session
 
-from app.database.database import get_db
+from app.database.database import get_db, SessionLocal
 from app.database.models import Job, Certificate
 from app.schemas.job import JobCreate, JobResponse
+from app.services.certificate_generator import generate_certificate
 
 
 router = APIRouter(
@@ -12,11 +13,73 @@ router = APIRouter(
 )
 
 
+def process_job(job_id: int):
+    db = SessionLocal()
+
+    try:
+        job = db.query(Job).filter(Job.id == job_id).first()
+
+        if not job:
+            return
+
+        job.status = "PROCESSING"
+        db.commit()
+
+        certificates = (
+            db.query(Certificate)
+            .filter(Certificate.job_id == job_id)
+            .all()
+        )
+
+        for certificate in certificates:
+
+            try:
+                certificate.status = "PROCESSING"
+                db.commit()
+
+                file_path = generate_certificate(
+                    recipient_name=certificate.recipient_name,
+                    event_name=job.event_name,
+                    certificate_id=certificate.id
+                )
+
+                certificate.file_path = file_path
+                certificate.status = "COMPLETED"
+
+                job.completed_count += 1
+
+                db.commit()
+
+            except Exception as error:
+
+                certificate.status = "FAILED"
+                certificate.error_message = str(error)
+
+                job.failed_count += 1
+
+                db.commit()
+
+        if job.failed_count > 0:
+            if job.completed_count > 0:
+                job.status = "COMPLETED_WITH_ERRORS"
+            else:
+                job.status = "FAILED"
+        else:
+            job.status = "COMPLETED"
+
+        db.commit()
+
+    finally:
+        db.close()
+
+
 @router.post("/", response_model=JobResponse, status_code=201)
 def create_job(
     job_data: JobCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db)
 ):
+
     job = Job(
         event_name=job_data.event_name,
         status="QUEUED",
@@ -27,6 +90,7 @@ def create_job(
     db.flush()
 
     for recipient in job_data.recipients:
+
         certificate = Certificate(
             job_id=job.id,
             recipient_name=recipient.name,
@@ -38,6 +102,11 @@ def create_job(
 
     db.commit()
     db.refresh(job)
+
+    background_tasks.add_task(
+        process_job,
+        job.id
+    )
 
     return JobResponse(
         job_id=job.id,
