@@ -5,3 +5,4 @@ __pycache__/
 .pytest_cache/
 generated_certificates/*
 bulk_certificate.db
+generated_certificates/*
