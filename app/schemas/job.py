@@ -63,3 +63,23 @@ class JobResponse(BaseModel):
     job_id: int
     status: str
     total: int
+
+
+class CertificateResult(BaseModel):
+    certificate_id: int
+    recipient_name: str
+    recipient_email: str | None
+    status: str
+    file_path: str | None
+    error_message: str | None
+
+
+class JobProgressResponse(BaseModel):
+    job_id: int
+    event_name: str
+    status: str
+    total: int
+    completed: int
+    failed: int
+    remaining: int
+    certificates: list[CertificateResult]
