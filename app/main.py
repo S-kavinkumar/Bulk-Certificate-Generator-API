@@ -2,7 +2,7 @@ from fastapi import FastAPI
 
 from app.database.database import Base, engine
 from app.database import models
-from app.routers import jobs
+from app.routers import jobs, certificates
 
 
 Base.metadata.create_all(bind=engine)
@@ -16,6 +16,7 @@ app = FastAPI(
 
 
 app.include_router(jobs.router)
+app.include_router(certificates.router)
 
 
 @app.get("/")
