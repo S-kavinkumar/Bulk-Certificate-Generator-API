@@ -1,5 +1,4 @@
-from datetime import datetime
-
+from datetime import datetime, timezone
 from sqlalchemy import Column, DateTime, Integer, String, ForeignKey, Text
 from sqlalchemy.orm import relationship
 
@@ -21,8 +20,10 @@ class Job(Base):
 
     failed_count = Column(Integer, nullable=False, default=0)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
-
+    created_at = Column(
+    DateTime,
+    default=lambda: datetime.now(timezone.utc)
+)
     completed_at = Column(DateTime, nullable=True)
 
     certificates = relationship(
@@ -56,7 +57,10 @@ class Certificate(Base):
 
     error_message = Column(Text, nullable=True)
 
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(
+    DateTime,
+    default=lambda: datetime.now(timezone.utc)
+)
 
     job = relationship(
         "Job",

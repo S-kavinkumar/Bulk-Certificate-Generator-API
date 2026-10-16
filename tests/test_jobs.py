@@ -1,3 +1,4 @@
+from tests.conftest import TestingSessionLocal
 def test_create_job(client):
 
     response = client.post(
@@ -141,6 +142,7 @@ def test_individual_certificate_failure_does_not_stop_job(
 ):
     from app.database.models import Job, Certificate
     from app.routers.jobs import process_job
+    from tests.conftest import TestingSessionLocal
 
     call_count = 0
 
@@ -161,6 +163,11 @@ def test_individual_certificate_failure_does_not_stop_job(
     monkeypatch.setattr(
         "app.routers.jobs.generate_certificate",
         mock_generate_certificate
+    )
+
+    monkeypatch.setattr(
+        "app.routers.jobs.SessionLocal",
+        TestingSessionLocal
     )
 
     job = Job(

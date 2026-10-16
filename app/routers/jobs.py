@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import (
     APIRouter,
     BackgroundTasks,
@@ -89,7 +90,9 @@ def process_job(job_id: int):
         else:
             job.status = "COMPLETED"
 
+        job.completed_at = datetime.now(timezone.utc)
         db.commit()
+        
 
     finally:
         db.close()
