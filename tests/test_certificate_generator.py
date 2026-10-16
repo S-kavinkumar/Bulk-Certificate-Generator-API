@@ -8,7 +8,7 @@ def test_generate_certificate():
     file_path = generate_certificate(
         recipient_name="Kavin Kumar",
         event_name="Python Workshop",
-        certificate_id=999
+        certificate_id=999999
     )
 
     path = Path(file_path)
